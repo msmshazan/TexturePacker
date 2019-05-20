@@ -54,7 +54,7 @@ namespace TexturePacker
             bool CheckUnique = false;
             bool CheckRotate = false;
 
-            if (args.Length < 3)
+            if (args.Length < 4)
             {
                 Console.WriteLine(@"
 TexturePacker - command line texture packer
@@ -102,9 +102,10 @@ TexturePacker - command line texture packer
             else
             {
 
-                var OutputFileInfo = new FileInfo(args[1]);
 
-                var InputDirectories = args[2].Split(',').Select(x => new DirectoryInfo(x)).ToList();
+                var OutputFileInfo = new FileInfo(args[0]);
+
+                var InputDirectories = args[1].Split(',').Select(x => new DirectoryInfo(Path.Combine( Directory.GetCurrentDirectory(), x))).ToList();
 
 
                 for (int i = 3; i < args.Length; i++)
