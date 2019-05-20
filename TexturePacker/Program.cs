@@ -15,17 +15,44 @@ namespace TexturePacker
     {
         static unsafe void Main(string[] args)
         {
-            int optSize = 4096;
-            int optPadding = 1;
-            bool optXml = false;
-            bool optBinary = false;
-            bool optJson = false;
-            bool optPremultiply = false;
-            bool optTrim = false;
-            bool optVerbose = false;
-            bool optForce = false;
-            bool optUnique = false;
-            bool optRotate = false;
+
+            int ValidateAtlasSize(int atlassize)
+            {
+                if (atlassize > 4096)
+                {
+                    atlassize = 4096;
+                }
+                else if (atlassize > 2048)
+                {
+                    atlassize = 2048;
+                }
+                else if (atlassize > 1024)
+                {
+                    atlassize = 1024;
+                }
+                else if (atlassize > 512)
+                {
+                    atlassize = 512;
+                }
+                else
+                {
+                    atlassize = 256;
+                }
+
+                return atlassize;
+            }
+
+            int AtlasSize = 4096;
+            int PaddingBetweenImages = 1;
+            bool OutputXML = false;
+            bool OutputBinary = false;
+            bool OutputJson = false;
+            bool EnablePremultiply = false;
+            bool EnableTrimming = false;
+            bool VerboseOutput = false;
+            bool ForcePack = false;
+            bool CheckUnique = false;
+            bool CheckRotate = false;
 
             if (args.Length < 3)
             {
@@ -53,7 +80,10 @@ TexturePacker - command line texture packer
     -s# --size#             max atlas size (# can be 4096, 2048, 1024, 512, 256, 128, or 64)
     -p# --pad#              padding between images (# can be from 0 to 16)
  
- binary format:
+");
+                
+                /* TODO:
+                  binary format:
     [int16] num_textures (below block is repeated this many times)
         [string] name
         [int16] num_images (below block is repeated this many times)
@@ -66,22 +96,11 @@ TexturePacker - command line texture packer
             [int16] img_frame_y         (if --trim enabled)
             [int16] img_frame_width     (if --trim enabled)
             [int16] img_frame_height    (if --trim enabled)
-            [byte] img_rotated          (if --rotate enabled)");
-
+            [byte] img_rotated          (if --rotate enabled)
+                 */
             }
             else
             {
-
-                /*
-                TexHandle Result = new TexHandle();
-                TextureLoadUtil.LoadTexture("ATLAS0.png" , ref Result);
-                TextureLoadUtil.OutTexture("test.png ", ref Result);
-                for (int i = 0; i < Result.Width * Result.Height; i++)
-                {
-                    uint pixel = ((uint*)Result.Data.ToPointer())[i];
-                    Console.WriteLine($"pixel { i}: 0x{pixel:x8}");
-                }
-                */
 
                 var OutputFileInfo = new FileInfo(args[1]);
 
@@ -93,59 +112,59 @@ TexturePacker - command line texture packer
                     string arg = args[i];
                     if (arg == "-d" || arg == "--default")
                     {
-                        optXml = optPremultiply = optTrim = optUnique = true;
+                        OutputXML = EnablePremultiply = EnableTrimming = CheckUnique = true;
                     }
                     else if (arg == "-x" || arg == "--xml")
                     {
-                        optXml = true;
+                        OutputXML = true;
                     }
                     else if (arg == "-b" || arg == "--binary")
                     {
-                        optBinary = true;
+                        OutputBinary = true;
                     }
                     else if (arg == "-j" || arg == "--json")
                     {
-                        optJson = true;
+                        OutputJson = true;
                     }
                     else if (arg == "-p" || arg == "--premultiply")
                     {
-                        optPremultiply = true;
+                        EnablePremultiply = true;
                     }
                     else if (arg == "-t" || arg == "--trim")
                     {
-                        optTrim = true;
+                        EnableTrimming = true;
                     }
                     else if (arg == "-v" || arg == "--verbose")
                     {
-                        optVerbose = true;
+                        VerboseOutput = true;
                     }
                     else if (arg == "-f" || arg == "--force")
                     {
-                        optForce = true;
+                        ForcePack = true;
                     }
                     else if (arg == "-u" || arg == "--unique")
                     {
-                        optUnique = true;
+                        CheckUnique = true;
                     }
                     else if (arg == "-r" || arg == "--rotate")
                     {
-                        optRotate = true;
+                        CheckRotate = true;
                     }
                     else if (arg.Contains("--size"))
                     {
-                        optSize = int.Parse(arg.Substring("--size".Length));
+                        AtlasSize = ValidateAtlasSize(int.Parse(arg.Substring("--size".Length)));
                     }
                     else if (arg.Contains("-s"))
                     {
-                        optSize = int.Parse(arg.Substring("-s".Length));
+                        AtlasSize = ValidateAtlasSize(int.Parse(arg.Substring("-s".Length)));
                     }
                     else if (arg.Contains("--pad"))
                     {
-                        optPadding = int.Parse(arg.Substring("--pad".Length));
+                        PaddingBetweenImages = int.Parse(arg.Substring("--pad".Length));
                     }
                     else if (arg.Contains("-p"))
                     {
-                        optPadding = int.Parse(arg.Substring("-p".Length));
+                        PaddingBetweenImages = int.Parse(arg.Substring("-p".Length));
                     }
                     else
                     {
@@ -168,7 +187,7 @@ TexturePacker - command line texture packer
 
                 if (OutputFileInfo.Directory.Exists)
                 {
-                    if (File.Exists($"{OutputFileInfo.FullName}.hash") && !optForce)
+                    if (File.Exists($"{OutputFileInfo.FullName}.hash") && !ForcePack)
                     {
                         int oldhash = int.Parse(File.ReadAllText($"{OutputFileInfo.FullName}.hash"));
                         if (oldhash != NewHash)
@@ -187,10 +206,10 @@ TexturePacker - command line texture packer
                     File.WriteAllText($"{OutputFileInfo.FullName}.hash", NewHash.ToString());
                 }
 
-                if (optVerbose)
+                if (VerboseOutput)
                 {
 
-
+                    Console.WriteLine("Reading all pngs ");
 
                 }
 
@@ -203,23 +222,22 @@ TexturePacker - command line texture packer
                     {
                         var texture = new TexHandle();
                         TextureLoadUtil.LoadTexture(texfile.FullName, ref texture);
-                        Bitmaps.Add(new PackerBitmap(texture,texfile.Name,optPremultiply,optTrim));
+                        Bitmaps.Add(new PackerBitmap(texture,texfile.Name,EnablePremultiply,EnableTrimming));
                     }
                 }
 
                 Bitmaps.Sort();
 
-                //Pack the bitmaps
                 while (Bitmaps.Count > 0 )
                 {
-                    if (optVerbose)
+                    if (VerboseOutput)
                     {
-                        // cout << "packing " << bitmaps.size() << " images..." << endl;
+                        Console.WriteLine("packing " + Bitmaps.Count +" images..." );
                     }
-                    var packer = new Packer(optSize, optSize, optPadding);
-                    packer.Pack(Bitmaps, optVerbose, optUnique, optRotate);
+                    var packer = new Packer(AtlasSize, AtlasSize, PaddingBetweenImages);
+                    packer.Pack(Bitmaps, VerboseOutput, CheckUnique, CheckRotate);
                     Packers.Add(packer);
-                    if (optVerbose)
+                    if (VerboseOutput)
                     {
                       Console.WriteLine("finished packing: "+  Packers.Count + " (" + packer.Width + " x " + packer.Height + ')' );
                     }
@@ -243,46 +261,50 @@ TexturePacker - command line texture packer
                     for (int t = 0; t < Packers[i].Bitmaps.Count; t++)
                     {
                         var Image = new AtlasImage();
+                        Image.Name = Packers[i].Bitmaps[t].Name;
                         Image.X = Packers[i].Points[t].x;
                         Image.Y = Packers[i].Points[t].y;
                         Image.Width = Packers[i].Bitmaps[t].Width;
                         Image.Height = Packers[i].Bitmaps[t].Height;
-                        Image.Name = Packers[i].Bitmaps[t].Name;
+                        Image.FrameX = Packers[i].Bitmaps[t].FrameX;
+                        Image.FrameY = Packers[i].Bitmaps[t].FrameY;
+                        Image.FrameW = Packers[i].Bitmaps[t].FrameW;
+                        Image.FrameH = Packers[i].Bitmaps[t].FrameH;
                         OutAtlas.Texture.Images.Add(Image);
                     }
                     OutputAtlasData.Add(OutAtlas);
 
                 }
 
-                //Save the atlas image
+                
                 for (int i = 0; i < Packers.Count; ++i)
                 {
-                    if (optVerbose)
+                    if (VerboseOutput)
                     {
                      Console.WriteLine("writing png: "  +OutputFileInfo.Name + i + ".png");
                     }
                     Packers[i].SavePng(OutputFileInfo.FullName + i + ".png");
                 }
 
-                //Save the atlas binary
-                if (optBinary)
+                
+                if (OutputBinary)
                 {
-                    if (optVerbose)
+                    if (VerboseOutput)
                     {
                         Console.WriteLine("Saving binary: " + OutputFileInfo.Name + ".bin");
                     }
-                    
+
                     for (int i = 0; i < Packers.Count; ++i)
                     {
-                        //packers[i]->SaveBin(name + to_string(i), bin, optTrim, optRotate);
+                        //TODO(shazan): Do Output Binary 
                     }
-                        //bin.close();
+
                 }
 
-                //Save the atlas xml
-                if (optXml)
+                
+                if (OutputXML)
                 {
-                    if (optVerbose)
+                    if (VerboseOutput)
                     {
                         Console.WriteLine("Saving xml: " + OutputFileInfo.Name + ".xml");
 
@@ -297,10 +319,10 @@ TexturePacker - command line texture packer
 
                 }
 
-                //Save the atlas json
-                if (optJson)
+                
+                if (OutputJson)
                 {
-                    if (optVerbose)
+                    if (VerboseOutput)
                     {
                         Console.WriteLine("Saving json: " + OutputFileInfo.Name + ".json");
                     }
@@ -311,62 +333,7 @@ TexturePacker - command line texture packer
 
             }
         }
+
+       
     }
-
-
-    
-    public partial class AtlasTexture
-    {
-
-       
-        
-        public string Name { get; set; }
-
-        public int Width { get; set; }
-
-
-        public int Height { get; set; }
-        public List<AtlasImage> Images { get; set; }
-
-
-
-    }
-
-
-    public partial class Atlas
-    {
-
-        /// <remarks/>
-        public AtlasTexture Texture { get; set; }
-
-       
-
-    }
-
-
-    public partial class AtlasImage
-    {
-
-       
-        public string Name { get; set; }
-
-       
-        public int X { get; set; }
-
-        
-        public int Y { get; set; }
-
-       
-        public int Width { get; set; }
-
-        
-        public int Height { get; set; }
-
-        public int FrameX { get; set; }
-        public int FrameY { get; set; }
-        public int FrameW { get; set; }
-        public int FrameH { get; set; }
-    }
-
-
 }

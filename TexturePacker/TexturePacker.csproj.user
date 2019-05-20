@@ -4,7 +4,7 @@
     <ProjectView>ProjectFiles</ProjectView>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <StartArguments>TexturePacker bin images -j -p -t -u -r -v -x -b</StartArguments>
+    <StartArguments>TexturePacker atlas images -j -p -t -u -r -v -x -b</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <StartArguments>TexturePacker bin images -j -p -t -u -r -v -x -b</StartArguments>

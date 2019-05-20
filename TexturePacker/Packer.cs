@@ -100,11 +100,11 @@ namespace TexturePacker
                     if (Points[i].rot)
                     {
                         int r = bitmap.Height - 1;
-                        for (int y = 0; y < bitmap.Height; ++y)
+                        for (int y = 0; y < bitmap.Width; ++y)
                         {
-                            for (int x = 0; x < bitmap.Width; ++x)
+                            for (int x = 0; x < bitmap.Height; ++x)
                             {
-                                data[(Points[i].y + y) * Width + (Points[i].x + x)] = src[(r - x) * bitmap.Width + y];
+                                data[(Points[i].y + y) * Width + (Points[i].x + x)] = src[((r - x) * bitmap.Width) + y];
                             }
                         }
                     }
@@ -114,7 +114,7 @@ namespace TexturePacker
                         {
                             for (int x = 0; x < bitmap.Width; ++x)
                             {
-                                data[(Points[i].y + y) * Width + (Points[i].x + x)] = src[y * bitmap.Width + x];
+                                data[(Points[i].y + y) * Width + (Points[i].x + x)] = src[(y * bitmap.Width) + x];
                             }
                         }
                     }
