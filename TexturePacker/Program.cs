@@ -257,7 +257,7 @@ TexturePacker - command line texture packer
                     OutAtlas.Height = Packers[i].Height;
                     OutAtlas.IsRotated = CheckRotate;
                     OutAtlas.IsTrimmed = EnableTrimming;
-                    OutAtlas.ISPremultiplied = EnablePremultiply;
+                    OutAtlas.IsPremultiplied = EnablePremultiply;
                     OutAtlas.Images = new List<AtlasImage>();
                     for (int t = 0; t < Packers[i].Bitmaps.Count; t++)
                     {
