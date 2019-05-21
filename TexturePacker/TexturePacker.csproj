@@ -68,7 +68,6 @@
   <ItemGroup>
     <Compile Include="Atlas.cs" />
     <Compile Include="AtlasImage.cs" />
-    <Compile Include="AtlasTexture.cs" />
     <Compile Include="BinRect.cs" />
     <Compile Include="GuillotineBinPack.cs" />
     <Compile Include="MaxRectsBinPack.cs" />

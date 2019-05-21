@@ -7,7 +7,7 @@
     <StartArguments>atlas images -j -p -t -u -r -v -x -b</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <StartArguments>atlas images -j -p -t -u -r -v -x -b</StartArguments>
+    <StartArguments>atlas images -j -p -t -u -v -x -b</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <StartArguments>atlas images -j -p -t -u -r -v -x -b</StartArguments>

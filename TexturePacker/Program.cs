@@ -80,24 +80,26 @@ TexturePacker - command line texture packer
     -s# --size#             max atlas size (# can be 4096, 2048, 1024, 512, 256, 128, or 64)
     -p# --pad#              padding between images (# can be from 0 to 16)
  
+      binary format:
+                    [int16] num_textures (below block is repeated this many times)
+                    [byte] img_rotated          
+                    [byte] img_trimmed          
+                        [string] name
+                        [int16] atlas_width
+                        [int16] atlas_height
+                        [int16] num_images (below block is repeated this many times)
+                            [string] img_name
+                            [int16] img_x
+                            [int16] img_y
+                            [int16] img_width
+                            [int16] img_height
+                            [int16] img_frame_x         (if --trim enabled)
+                            [int16] img_frame_y         (if --trim enabled)
+                            [int16] img_frame_width     (if --trim enabled)
+                            [int16] img_frame_height    (if --trim enabled)
+                   
+
 ");
-                
-                /* TODO:
-                  binary format:
-    [int16] num_textures (below block is repeated this many times)
-        [string] name
-        [int16] num_images (below block is repeated this many times)
-            [string] img_name
-            [int16] img_x
-            [int16] img_y
-            [int16] img_width
-            [int16] img_height
-            [int16] img_frame_x         (if --trim enabled)
-            [int16] img_frame_y         (if --trim enabled)
-            [int16] img_frame_width     (if --trim enabled)
-            [int16] img_frame_height    (if --trim enabled)
-            [byte] img_rotated          (if --rotate enabled)
-                 */
             }
             else
             {
@@ -108,7 +110,7 @@ TexturePacker - command line texture packer
                 var InputDirectories = args[1].Split(',').Select(x => new DirectoryInfo(Path.Combine( Directory.GetCurrentDirectory(), x))).ToList();
 
 
-                for (int i = 3; i < args.Length; i++)
+                for (int i = 2; i < args.Length; i++)
                 {
                     string arg = args[i];
                     if (arg == "-d" || arg == "--default")
@@ -254,11 +256,11 @@ TexturePacker - command line texture packer
                 for (int i = 0; i < Packers.Count; i++)
                 {
                     var OutAtlas = new Atlas();
-                    OutAtlas.Texture = new AtlasTexture();
-                    OutAtlas.Texture.Name = OutputFileInfo.Name + i + ".png";
-                    OutAtlas.Texture.Width = Packers[i].Width;
-                    OutAtlas.Texture.Height = Packers[i].Height;
-                    OutAtlas.Texture.Images = new List<AtlasImage>();
+                    OutAtlas.Name = OutputFileInfo.Name + i + ".png";
+                    OutAtlas.Width = Packers[i].Width;
+                    OutAtlas.Height = Packers[i].Height;
+                    OutAtlas.IsRotated = CheckRotate;
+                    OutAtlas.Images = new List<AtlasImage>();
                     for (int t = 0; t < Packers[i].Bitmaps.Count; t++)
                     {
                         var Image = new AtlasImage();
@@ -271,7 +273,7 @@ TexturePacker - command line texture packer
                         Image.FrameY = Packers[i].Bitmaps[t].FrameY;
                         Image.FrameW = Packers[i].Bitmaps[t].FrameW;
                         Image.FrameH = Packers[i].Bitmaps[t].FrameH;
-                        OutAtlas.Texture.Images.Add(Image);
+                        OutAtlas.Images.Add(Image);
                     }
                     OutputAtlasData.Add(OutAtlas);
 
@@ -282,7 +284,7 @@ TexturePacker - command line texture packer
                 {
                     if (VerboseOutput)
                     {
-                     Console.WriteLine("writing png: "  +OutputFileInfo.Name + i + ".png");
+                        Console.WriteLine("writing png: "+OutputFileInfo.Name + i + ".png");
                     }
                     Packers[i].SavePng(OutputFileInfo.FullName + i + ".png");
                 }
@@ -295,10 +297,35 @@ TexturePacker - command line texture packer
                         Console.WriteLine("Saving binary: " + OutputFileInfo.Name + ".bin");
                     }
 
-                    for (int i = 0; i < Packers.Count; ++i)
+                    var FStream =  File.OpenWrite(OutputFileInfo.FullName + ".bin");
+                    using (var stringwriter = new BinaryWriter(FStream))
                     {
-                        //TODO(shazan): Do Output Binary 
+
+                        stringwriter.Write((Int16)OutputAtlasData.Count);
+                        stringwriter.Write((byte) (CheckRotate ? 0: 1));
+                        stringwriter.Write((byte) (EnableTrimming ? 0: 1));
+                        for (int i = 0; i < OutputAtlasData.Count; ++i)
+                        {
+                            stringwriter.Write(OutputAtlasData[i].Name);
+                            stringwriter.Write((Int16)OutputAtlasData[i].Width);
+                            stringwriter.Write((Int16)OutputAtlasData[i].Height);
+                            stringwriter.Write((Int16)OutputAtlasData[i].Images.Count);
+                            for (int t = 0; t < OutputAtlasData[i].Images.Count; t++)
+                            {
+                                stringwriter.Write(OutputAtlasData[i].Images[t].Name);
+                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].X);
+                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].Y);
+                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].Width);
+                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].Height);
+                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].FrameX);
+                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].FrameY);
+                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].FrameW);
+                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].FrameH);
+
+                            }
+                        }
                     }
+                    FStream.Close();
 
                 }
 
