@@ -84,6 +84,7 @@ TexturePacker - command line texture packer
                     [int16] num_textures (below block is repeated this many times)
                     [byte] img_rotated          
                     [byte] img_trimmed          
+                    [byte] img_premultiplied         
                         [string] name
                         [int16] atlas_width
                         [int16] atlas_height
@@ -97,18 +98,13 @@ TexturePacker - command line texture packer
                             [int16] img_frame_y         (if --trim enabled)
                             [int16] img_frame_width     (if --trim enabled)
                             [int16] img_frame_height    (if --trim enabled)
-                   
-
 ");
             }
             else
             {
-
-
                 var OutputFileInfo = new FileInfo(args[0]);
 
                 var InputDirectories = args[1].Split(',').Select(x => new DirectoryInfo(Path.Combine( Directory.GetCurrentDirectory(), x))).ToList();
-
 
                 for (int i = 2; i < args.Length; i++)
                 {
@@ -260,6 +256,8 @@ TexturePacker - command line texture packer
                     OutAtlas.Width = Packers[i].Width;
                     OutAtlas.Height = Packers[i].Height;
                     OutAtlas.IsRotated = CheckRotate;
+                    OutAtlas.IsTrimmed = EnableTrimming;
+                    OutAtlas.ISPremultiplied = EnablePremultiply;
                     OutAtlas.Images = new List<AtlasImage>();
                     for (int t = 0; t < Packers[i].Bitmaps.Count; t++)
                     {
@@ -304,6 +302,7 @@ TexturePacker - command line texture packer
                         stringwriter.Write((Int16)OutputAtlasData.Count);
                         stringwriter.Write((byte) (CheckRotate ? 0: 1));
                         stringwriter.Write((byte) (EnableTrimming ? 0: 1));
+                        stringwriter.Write((byte) (EnablePremultiply ? 0: 1));
                         for (int i = 0; i < OutputAtlasData.Count; ++i)
                         {
                             stringwriter.Write(OutputAtlasData[i].Name);

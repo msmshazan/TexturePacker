@@ -15,6 +15,8 @@ namespace TexturePacker
 
 
         public bool IsRotated { get; set; }
+        public bool IsTrimmed { get; set; }
+        public bool ISPremultiplied { get; set; }
     }
 
 
