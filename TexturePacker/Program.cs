@@ -34,12 +34,25 @@ namespace TexturePacker
                 {
                     atlassize = 512;
                 }
-                else
+                else if (atlassize > 256)
                 {
                     atlassize = 256;
                 }
+                else if (atlassize > 128)
+                {
+                    atlassize = 128;
+                }
+                else
+                {
+                    atlassize = 64;
+                }
 
                 return atlassize;
+            }
+
+            int ValidatePaddingAmount(int Padding)
+            {
+                return Math.Min(Math.Max( Padding , 0),16);
             }
 
             int AtlasSize = 4096;
@@ -159,18 +172,17 @@ TexturePacker - command line texture packer
                     }
                     else if (arg.Contains("--pad"))
                     {
-                        PaddingBetweenImages = int.Parse(arg.Substring("--pad".Length));
+                        PaddingBetweenImages = ValidatePaddingAmount( int.Parse(arg.Substring("--pad".Length)));
                     }
                     else if (arg.Contains("-p"))
                     {
-                        PaddingBetweenImages = int.Parse(arg.Substring("-p".Length));
+                        PaddingBetweenImages = ValidatePaddingAmount( int.Parse(arg.Substring("-p".Length)));
                     }
                     else
                     {
                         Console.WriteLine($"unexpected argument: {arg}");
                     }
                 }
-
 
                 int NewHash = 0;
 
