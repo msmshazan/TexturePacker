@@ -193,9 +193,13 @@ TexturePacker - command line texture packer
 
                 for (int i = 0; i < InputDirectories.Count; i++)
                 {
-                    NewHash += InputDirectories[i].GetHashCode();
+                    var Directory = InputDirectories[i];
+                    foreach (var texfile in Directory.GetFiles("*.png"))
+                    {
+                        NewHash += texfile.GetHashCode();
+                    }
                 }
-
+                bool AllowPack = ForcePack;
                 if (OutputFileInfo.Directory.Exists)
                 {
                     if (File.Exists($"{OutputFileInfo.FullName}.hash") && !ForcePack)
@@ -204,11 +208,13 @@ TexturePacker - command line texture packer
                         if (oldhash != NewHash)
                         {
                             File.WriteAllText($"{OutputFileInfo.FullName}.hash", NewHash.ToString());
+                            AllowPack = true;
                         }
                     }
                     else
                     {
                         File.WriteAllText($"{OutputFileInfo.FullName}.hash", NewHash.ToString());
+                        AllowPack = true;
                     }
                 }
                 else
@@ -217,159 +223,165 @@ TexturePacker - command line texture packer
                     File.WriteAllText($"{OutputFileInfo.FullName}.hash", NewHash.ToString());
                 }
 
-                if (VerboseOutput)
-                {
-
-                    Console.WriteLine("Reading all pngs ");
-
-                }
-
-                List<PackerBitmap> Bitmaps = new List<PackerBitmap>();
-                List<Packer> Packers = new List<Packer>();
-
-                foreach (var Directory in InputDirectories)
-                {
-                    foreach (var texfile in Directory.GetFiles("*.png"))
-                    {
-                        var texture = new TexHandle();
-                        TextureLoadUtil.LoadTexture(texfile.FullName, ref texture);
-                        Bitmaps.Add(new PackerBitmap(texture,texfile.Name,EnablePremultiply,EnableTrimming));
-                    }
-                }
-
-                Bitmaps.Sort();
-
-                while (Bitmaps.Count > 0 )
+                if (AllowPack)
                 {
                     if (VerboseOutput)
                     {
-                        Console.WriteLine("packing " + Bitmaps.Count +" images..." );
-                    }
-                    var packer = new Packer(AtlasSize, AtlasSize, PaddingBetweenImages);
-                    packer.Pack(Bitmaps, VerboseOutput, CheckUnique, CheckRotate);
-                    Packers.Add(packer);
-                    if (VerboseOutput)
-                    {
-                      Console.WriteLine("finished packing: "+  Packers.Count + " (" + packer.Width + " x " + packer.Height + ')' );
-                    }
-                    if (packer.Bitmaps.Count <= 0)
-                    {
-                        Console.WriteLine( "packing failed, could not fit any bitmap " );
-                        return;
-                    }
-                }
 
-                var OutputAtlasData = new List<Atlas>();
+                        Console.WriteLine("Reading all pngs ");
 
-                for (int i = 0; i < Packers.Count; i++)
-                {
-                    var OutAtlas = new Atlas();
-                    OutAtlas.Name = OutputFileInfo.Name + i + ".png";
-                    OutAtlas.Width = Packers[i].Width;
-                    OutAtlas.Height = Packers[i].Height;
-                    OutAtlas.IsRotated = CheckRotate;
-                    OutAtlas.IsTrimmed = EnableTrimming;
-                    OutAtlas.IsPremultiplied = EnablePremultiply;
-                    OutAtlas.Images = new List<AtlasImage>();
-                    for (int t = 0; t < Packers[i].Bitmaps.Count; t++)
-                    {
-                        var Image = new AtlasImage();
-                        Image.Name = Packers[i].Bitmaps[t].Name;
-                        Image.X = Packers[i].Points[t].x;
-                        Image.Y = Packers[i].Points[t].y;
-                        Image.Width = Packers[i].Bitmaps[t].Width;
-                        Image.Height = Packers[i].Bitmaps[t].Height;
-                        Image.FrameX = Packers[i].Bitmaps[t].FrameX;
-                        Image.FrameY = Packers[i].Bitmaps[t].FrameY;
-                        Image.FrameW = Packers[i].Bitmaps[t].FrameW;
-                        Image.FrameH = Packers[i].Bitmaps[t].FrameH;
-                        OutAtlas.Images.Add(Image);
-                    }
-                    OutputAtlasData.Add(OutAtlas);
-
-                }
-
-                
-                for (int i = 0; i < Packers.Count; ++i)
-                {
-                    if (VerboseOutput)
-                    {
-                        Console.WriteLine("writing png: "+OutputFileInfo.Name + i + ".png");
-                    }
-                    Packers[i].SavePng(OutputFileInfo.FullName + i + ".png");
-                }
-
-                
-                if (OutputBinary)
-                {
-                    if (VerboseOutput)
-                    {
-                        Console.WriteLine("Saving binary: " + OutputFileInfo.Name + ".bin");
                     }
 
-                    var FStream =  File.OpenWrite(OutputFileInfo.FullName + ".bin");
-                    using (var stringwriter = new BinaryWriter(FStream))
-                    {
+                    List<PackerBitmap> Bitmaps = new List<PackerBitmap>();
+                    List<Packer> Packers = new List<Packer>();
 
-                        stringwriter.Write((Int16)OutputAtlasData.Count);
-                        stringwriter.Write((byte) (CheckRotate ? 0: 1));
-                        stringwriter.Write((byte) (EnableTrimming ? 0: 1));
-                        stringwriter.Write((byte) (EnablePremultiply ? 0: 1));
-                        for (int i = 0; i < OutputAtlasData.Count; ++i)
+                    foreach (var Directory in InputDirectories)
+                    {
+                        foreach (var texfile in Directory.GetFiles("*.png"))
                         {
-                            stringwriter.Write(OutputAtlasData[i].Name);
-                            stringwriter.Write((Int16)OutputAtlasData[i].Width);
-                            stringwriter.Write((Int16)OutputAtlasData[i].Height);
-                            stringwriter.Write((Int16)OutputAtlasData[i].Images.Count);
-                            for (int t = 0; t < OutputAtlasData[i].Images.Count; t++)
-                            {
-                                stringwriter.Write(OutputAtlasData[i].Images[t].Name);
-                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].X);
-                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].Y);
-                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].Width);
-                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].Height);
-                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].FrameX);
-                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].FrameY);
-                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].FrameW);
-                                stringwriter.Write((Int16)OutputAtlasData[i].Images[t].FrameH);
-
-                            }
+                            var texture = new TexHandle();
+                            TextureLoadUtil.LoadTexture(texfile.FullName, ref texture);
+                            Bitmaps.Add(new PackerBitmap(texture, texfile.Name, EnablePremultiply, EnableTrimming));
                         }
                     }
-                    FStream.Close();
 
+                    Bitmaps.Sort();
+
+                    while (Bitmaps.Count > 0)
+                    {
+                        if (VerboseOutput)
+                        {
+                            Console.WriteLine("packing " + Bitmaps.Count + " images...");
+                        }
+                        var packer = new Packer(AtlasSize, AtlasSize, PaddingBetweenImages);
+                        packer.Pack(Bitmaps, VerboseOutput, CheckUnique, CheckRotate);
+                        Packers.Add(packer);
+                        if (VerboseOutput)
+                        {
+                            Console.WriteLine("finished packing: " + Packers.Count + " (" + packer.Width + " x " + packer.Height + ')');
+                        }
+                        if (packer.Bitmaps.Count <= 0)
+                        {
+                            Console.WriteLine("packing failed, could not fit any bitmap ");
+                            return;
+                        }
+                    }
+
+                    var OutputAtlasData = new List<Atlas>();
+
+                    for (int i = 0; i < Packers.Count; i++)
+                    {
+                        var OutAtlas = new Atlas();
+                        OutAtlas.Name = OutputFileInfo.Name + i + ".png";
+                        OutAtlas.Width = Packers[i].Width;
+                        OutAtlas.Height = Packers[i].Height;
+                        OutAtlas.IsRotated = CheckRotate;
+                        OutAtlas.IsTrimmed = EnableTrimming;
+                        OutAtlas.IsPremultiplied = EnablePremultiply;
+                        OutAtlas.Images = new List<AtlasImage>();
+                        for (int t = 0; t < Packers[i].Bitmaps.Count; t++)
+                        {
+                            var Image = new AtlasImage();
+                            Image.Name = Packers[i].Bitmaps[t].Name.Remove(Packers[i].Bitmaps[t].Name.Length - ".png".Length);
+                            Image.X = Packers[i].Points[t].x;
+                            Image.Y = Packers[i].Points[t].y;
+                            Image.Width = Packers[i].Bitmaps[t].Width;
+                            Image.Height = Packers[i].Bitmaps[t].Height;
+                            Image.FrameX = Packers[i].Bitmaps[t].FrameX;
+                            Image.FrameY = Packers[i].Bitmaps[t].FrameY;
+                            Image.FrameW = Packers[i].Bitmaps[t].FrameW;
+                            Image.FrameH = Packers[i].Bitmaps[t].FrameH;
+                            OutAtlas.Images.Add(Image);
+                        }
+                        OutputAtlasData.Add(OutAtlas);
+
+                    }
+
+
+                    for (int i = 0; i < Packers.Count; ++i)
+                    {
+                        if (VerboseOutput)
+                        {
+                            Console.WriteLine("writing png: " + OutputFileInfo.Name + i + ".png");
+                        }
+                        Packers[i].SavePng(OutputFileInfo.FullName + i + ".png");
+                    }
+
+
+                    if (OutputBinary)
+                    {
+                        if (VerboseOutput)
+                        {
+                            Console.WriteLine("Saving binary: " + OutputFileInfo.Name + ".bin");
+                        }
+
+                        var FStream = File.OpenWrite(OutputFileInfo.FullName + ".bin");
+                        using (var stringwriter = new BinaryWriter(FStream,Encoding.ASCII))
+                        {
+
+                            stringwriter.Write((ushort)OutputAtlasData.Count);
+                            stringwriter.Write((byte)(CheckRotate ? 1 : 0));
+                            stringwriter.Write((byte)(EnableTrimming ? 1 : 0));
+                            stringwriter.Write((byte)(EnablePremultiply ? 1 : 0));
+                            for (int i = 0; i < OutputAtlasData.Count; ++i)
+                            {
+                                stringwriter.Write(OutputAtlasData[i].Name);
+                                stringwriter.Write((ushort)OutputAtlasData[i].Width);
+                                stringwriter.Write((ushort)OutputAtlasData[i].Height);
+                                stringwriter.Write((ushort)OutputAtlasData[i].Images.Count);
+                                for (int t = 0; t < OutputAtlasData[i].Images.Count; t++)
+                                {
+                                    stringwriter.Write(OutputAtlasData[i].Images[t].Name);
+                                    stringwriter.Write((ushort)OutputAtlasData[i].Images[t].X);
+                                    stringwriter.Write((ushort)OutputAtlasData[i].Images[t].Y);
+                                    stringwriter.Write((ushort)OutputAtlasData[i].Images[t].Width);
+                                    stringwriter.Write((ushort)OutputAtlasData[i].Images[t].Height);
+                                    stringwriter.Write((ushort)OutputAtlasData[i].Images[t].FrameX);
+                                    stringwriter.Write((ushort)OutputAtlasData[i].Images[t].FrameY);
+                                    stringwriter.Write((ushort)OutputAtlasData[i].Images[t].FrameW);
+                                    stringwriter.Write((ushort)OutputAtlasData[i].Images[t].FrameH);
+
+                                }
+                            }
+                        }
+                        FStream.Close();
+
+                    }
+
+
+                    if (OutputXML)
+                    {
+                        if (VerboseOutput)
+                        {
+                            Console.WriteLine("Saving xml: " + OutputFileInfo.Name + ".xml");
+
+                        }
+
+                        using (var stringwriter = new StringWriter())
+                        {
+
+                            var serializer = new XmlSerializer(OutputAtlasData.GetType());
+                            serializer.Serialize(stringwriter, OutputAtlasData);
+                            File.WriteAllText(OutputFileInfo.FullName + ".xml", stringwriter.ToString());
+                        }
+
+                    }
+
+
+                    if (OutputJson)
+                    {
+                        if (VerboseOutput)
+                        {
+                            Console.WriteLine("Saving json: " + OutputFileInfo.Name + ".json");
+                        }
+                        File.WriteAllText(OutputFileInfo.FullName + ".json", JsonConvert.SerializeObject(OutputAtlasData, Newtonsoft.Json.Formatting.Indented));
+
+                    }
                 }
-
-                
-                if (OutputXML)
+                else
                 {
-                    if (VerboseOutput)
-                    {
-                        Console.WriteLine("Saving xml: " + OutputFileInfo.Name + ".xml");
-
-                    }
-
-                    using (var stringwriter = new StringWriter())
-                    {
-                        var serializer = new XmlSerializer(OutputAtlasData.GetType());
-                        serializer.Serialize(stringwriter,OutputAtlasData);
-                        File.WriteAllText(OutputFileInfo.FullName + ".xml", stringwriter.ToString());
-                    }
-
+                    Console.WriteLine("Atlas is unchanged");
                 }
-
-                
-                if (OutputJson)
-                {
-                    if (VerboseOutput)
-                    {
-                        Console.WriteLine("Saving json: " + OutputFileInfo.Name + ".json");
-                    }
-
-                    File.WriteAllText( OutputFileInfo.FullName +".json" , JsonConvert.SerializeObject(OutputAtlasData,Newtonsoft.Json.Formatting.Indented));
-                   
-                }
-
             }
         }
 

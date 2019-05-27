@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
-
+using Newtonsoft.Json;
 namespace TexturePacker
 {
+
+    [JsonObject("Atlas")]
     public partial class Atlas
     {
 
@@ -11,6 +13,8 @@ namespace TexturePacker
 
 
         public int Height { get; set; }
+
+
         public List<AtlasImage> Images { get; set; }
 
 

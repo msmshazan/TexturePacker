@@ -87,8 +87,12 @@
     <Content Include="images\1385136139955.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="images\blender_icons16.png" />
-    <Content Include="images\normalmap.png" />
+    <Content Include="images\blender_icons16.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="images\normalmap.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="images\sheet_9.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
